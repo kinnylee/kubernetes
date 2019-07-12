@@ -60,6 +60,11 @@ import (
 
 // NewSchedulerCommand creates a *cobra.Command object with default parameters
 func NewSchedulerCommand() *cobra.Command {
+	/**
+	***********************
+	初始化Scheduler需要的参数
+	***********************
+	 */
 	opts, err := options.NewOptions()
 	if err != nil {
 		klog.Fatalf("unable to initialize command options: %v", err)
@@ -74,7 +79,21 @@ resource requirements, quality of service requirements, hardware/software/policy
 constraints, affinity and anti-affinity specifications, data locality, inter-workload
 interference, deadlines, and so on. Workload-specific requirements will be exposed
 through the API as necessary.`,
+
+		/**
+		***********************
+		重写run方法，这里是整个scheduler流程的核心，
+		k8s中其他组件的流程和这个类似
+		***********************
+		 */
 		Run: func(cmd *cobra.Command, args []string) {
+			/**
+			***********************
+
+			Run方法的核心函数，具体实现都委托给了runCommand
+
+			***********************
+			*/
 			if err := runCommand(cmd, args, opts); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
@@ -127,6 +146,14 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 		klog.Infof("Wrote configuration to: %s\n", opts.WriteConfigTo)
 	}
 
+	/**
+	***********************
+
+	内部初始化客户端，选主等信息
+
+	***********************
+	*/
+
 	c, err := opts.Config()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -152,6 +179,13 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 		return fmt.Errorf("unable to register configz: %s", err)
 	}
 
+	/**
+	***********************
+
+	关键代码，实现逻辑具体调用了Run方法
+
+	***********************
+	*/
 	return Run(cc, stopCh)
 }
 
@@ -159,6 +193,14 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 func Run(cc schedulerserverconfig.CompletedConfig, stopCh <-chan struct{}) error {
 	// To help debugging, immediately log version
 	klog.V(1).Infof("Starting Kubernetes Scheduler version %+v", version.Get())
+
+	/**
+	***********************
+
+	创建调度器，内部根据配置信息，初始化相应的调度算法
+
+	***********************
+	*/
 
 	// Create the scheduler.
 	sched, err := scheduler.New(cc.Client,
@@ -188,6 +230,13 @@ func Run(cc schedulerserverconfig.CompletedConfig, stopCh <-chan struct{}) error
 		return err
 	}
 
+	/**
+	***********************
+
+	广播事件给监听者
+
+	***********************
+	*/
 	// Prepare the event broadcaster.
 	if cc.Broadcaster != nil && cc.EventClient != nil {
 		cc.Broadcaster.StartLogging(klog.V(6).Infof)
@@ -223,6 +272,15 @@ func Run(cc schedulerserverconfig.CompletedConfig, stopCh <-chan struct{}) error
 		}
 	}
 
+	/**
+	***********************
+
+	启动所有的Informer，Informer是k8s中比较重要的概念，
+	实现事件监听机制
+
+	***********************
+	*/
+
 	// Start all informers.
 	go cc.PodInformer.Informer().Run(stopCh)
 	cc.InformerFactory.Start(stopCh)
@@ -232,6 +290,15 @@ func Run(cc schedulerserverconfig.CompletedConfig, stopCh <-chan struct{}) error
 
 	// Prepare a reusable runCommand function.
 	run := func(ctx context.Context) {
+
+		/**
+		***********************
+
+		关键代码，调度器调度方法
+
+		***********************
+		*/
+
 		sched.Run()
 		<-ctx.Done()
 	}

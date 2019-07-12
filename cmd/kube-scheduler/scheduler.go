@@ -33,6 +33,18 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	/**
+	 ***********************
+	  使用了cobra第三方框架，创建cobra.Command对象。
+	  创建时最核心的是重写 Run 方法。
+
+	  Run方法会在command执行Execute方法时被调用
+
+	  command对象的execute方法使用了模板方法模式，
+	  内部只搭建了执行的架子，比如：run之前，run，run之后。
+	  具体实现留给子类重写
+	 ***********************
+	 */
 	command := app.NewSchedulerCommand()
 
 	// TODO: once we switch everything over to Cobra commands, we can go back to calling
@@ -43,6 +55,12 @@ func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
+	/**
+	***********************
+	开始执行Execute方法，
+	内部会调用Run方法
+	***********************
+	*/
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}

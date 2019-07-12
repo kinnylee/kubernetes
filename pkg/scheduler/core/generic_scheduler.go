@@ -209,6 +209,15 @@ func (g *genericScheduler) Schedule(pod *v1.Pod, nodeLister algorithm.NodeLister
 
 	trace.Step("Computing predicates")
 	startPredicateEvalTime := time.Now()
+
+	/**
+	***********************
+
+	关键函数，从这里可以看到整个调度的输入就两个：pod和nodes，
+	输出为选择的一批符合的node
+
+	***********************
+	*/
 	filteredNodes, failedPredicateMap, err := g.findNodesThatFit(pod, nodes)
 	if err != nil {
 		return result, err
@@ -251,6 +260,14 @@ func (g *genericScheduler) Schedule(pod *v1.Pod, nodeLister algorithm.NodeLister
 
 	trace.Step("Selecting host")
 
+	/**
+	***********************
+
+	从一批排序后的nodeList中选择得分最高的node返回。
+	返回值包括：最优的node的地址，可用node个数，评估后
+
+	***********************
+	*/
 	host, err := g.selectHost(priorityList)
 	return ScheduleResult{
 		SuggestedHost:  host,

@@ -230,6 +230,14 @@ func (o *Options) Config() (*schedulerappconfig.Config, error) {
 		return nil, err
 	}
 
+	/**
+	***********************
+
+	创建和kube-apiserver组件交互的客户端，选主客户端，事件广播客户端
+
+	***********************
+	*/
+
 	// Prepare kube clients.
 	client, leaderElectionClient, eventClient, err := createClients(c.ComponentConfig.ClientConnection, o.Master, c.ComponentConfig.LeaderElection.RenewDeadline.Duration)
 	if err != nil {

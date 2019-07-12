@@ -168,6 +168,13 @@ func New(client clientset.Interface,
 	var config *factory.Config
 	source := schedulerAlgorithmSource
 	switch {
+	/**
+	***********************
+
+	如果配置了指定的调度算法，就加载该调度算法
+
+	***********************
+	*/
 	case source.Provider != nil:
 		// Create the config from a named algorithm provider.
 		sc, err := configurator.CreateFromProvider(*source.Provider)
@@ -175,6 +182,13 @@ func New(client clientset.Interface,
 			return nil, fmt.Errorf("couldn't create scheduler using provider %q: %v", *source.Provider, err)
 		}
 		config = sc
+	/**
+	***********************
+
+	如果配置了policy，先解析policy文件，根据policy找到调度算法
+
+	***********************
+	*/
 	case source.Policy != nil:
 		// Create the config from a user specified policy source.
 		policy := &schedulerapi.Policy{}
@@ -204,6 +218,13 @@ func New(client clientset.Interface,
 	// Create the scheduler.
 	sched := NewFromConfig(config)
 
+	/**
+	***********************
+
+	添加事件处理函数，informer提供的回调方法
+
+	***********************
+	*/
 	AddAllEventHandlers(sched, options.schedulerName, nodeInformer, podInformer, pvInformer, pvcInformer, serviceInformer, storageClassInformer, csiNodeInformer)
 	return sched, nil
 }
@@ -257,7 +278,13 @@ func (sched *Scheduler) Run() {
 	if !sched.config.WaitForCacheSync() {
 		return
 	}
+	/**
+	***********************
 
+	启动协程，不断做调度，具体实现交给scheduleOne
+
+	***********************
+	*/
 	go wait.Until(sched.scheduleOne, 0, sched.config.StopEverything)
 }
 
@@ -283,6 +310,13 @@ func (sched *Scheduler) recordSchedulingFailure(pod *v1.Pod, err error, reason s
 // schedule implements the scheduling algorithm and returns the suggested result(host,
 // evaluated nodes number,feasible nodes number).
 func (sched *Scheduler) schedule(pod *v1.Pod, pluginContext *framework.PluginContext) (core.ScheduleResult, error) {
+	/**
+	***********************
+
+	调用调度算法。调度分为很多步：
+
+	***********************
+	*/
 	result, err := sched.config.Algorithm.Schedule(pod, sched.config.NodeLister, pluginContext)
 	if err != nil {
 		pod = pod.DeepCopy()
@@ -444,6 +478,13 @@ func (sched *Scheduler) bind(assumed *v1.Pod, b *v1.Binding) error {
 func (sched *Scheduler) scheduleOne() {
 	fwk := sched.config.Framework
 
+	/**
+	***********************
+
+	取出需要被调度的pod，scheduler调度的输入之一，另一个输入为Node List
+
+	***********************
+	*/
 	pod := sched.config.NextPod()
 	// pod could be nil when schedulerQueue is closed
 	if pod == nil {
@@ -460,6 +501,17 @@ func (sched *Scheduler) scheduleOne() {
 	// Synchronously attempt to find a fit for the pod.
 	start := time.Now()
 	pluginContext := framework.NewPluginContext()
+
+	/**
+	***********************
+
+	开始调度，传入需要被调度的pod，另一个输入node list在context中
+	函数返回调度的结果
+
+	该函数是调度模块的核心，通过合适的调度算法，得到最合适的node节点
+
+	***********************
+	*/
 	scheduleResult, err := sched.schedule(pod, pluginContext)
 	if err != nil {
 		// schedule() may have failed because the pod would not fit on any host, so we try to
@@ -577,6 +629,14 @@ func (sched *Scheduler) scheduleOne() {
 			return
 		}
 
+		/**
+		***********************
+
+		将被调度的pod和调度算法得出的合适的node做绑定
+		绑定操作调用http请求给apiserver，后者负责将数据持久化到etcd
+
+		***********************
+		*/
 		err := sched.bind(assumedPod, &v1.Binding{
 			ObjectMeta: metav1.ObjectMeta{Namespace: assumedPod.Namespace, Name: assumedPod.Name, UID: assumedPod.UID},
 			Target: v1.ObjectReference{
