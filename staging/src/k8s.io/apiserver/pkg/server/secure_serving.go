@@ -114,6 +114,12 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 	}
 
 	klog.Infof("Serving securely on %s", secureServer.Addr)
+
+	/**
+	***********************
+
+	***********************
+	*/
 	return RunServer(secureServer, s.Listener, shutdownTimeout, stopCh)
 }
 
@@ -152,6 +158,11 @@ func RunServer(
 			listener = tls.NewListener(listener, server.TLSConfig)
 		}
 
+		/**
+		***********************
+
+		***********************
+		*/
 		err := server.Serve(listener)
 
 		msg := fmt.Sprintf("Stopped listening on %s", ln.Addr().String())

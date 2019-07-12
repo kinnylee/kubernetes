@@ -333,6 +333,14 @@ func (s preparedGenericAPIServer) NonBlockingRun(stopCh <-chan struct{}) error {
 	var stoppedCh <-chan struct{}
 	if s.SecureServingInfo != nil && s.Handler != nil {
 		var err error
+
+		/**
+		***********************
+		内部真正执行http的调用
+		s.Handler是重要的参数
+
+		***********************
+		*/
 		stoppedCh, err = s.SecureServingInfo.Serve(s.Handler, s.ShutdownTimeout, internalStopCh)
 		if err != nil {
 			close(internalStopCh)
@@ -397,6 +405,11 @@ func (s *GenericAPIServer) InstallLegacyAPIGroup(apiPrefix string, apiGroupInfo 
 		return fmt.Errorf("unable to get openapi models: %v", err)
 	}
 
+	/**
+	***********************
+
+	***********************
+	 */
 	if err := s.installAPIResources(apiPrefix, apiGroupInfo, openAPIModels); err != nil {
 		return err
 	}
@@ -427,6 +440,12 @@ func (s *GenericAPIServer) InstallAPIGroups(apiGroupInfos ...*APIGroupInfo) erro
 	}
 
 	for _, apiGroupInfo := range apiGroupInfos {
+
+		/**
+		***********************
+
+		***********************
+		 */
 		if err := s.installAPIResources(APIGroupPrefix, apiGroupInfo, openAPIModels); err != nil {
 			return fmt.Errorf("unable to install api resources: %v", err)
 		}

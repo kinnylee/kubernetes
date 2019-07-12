@@ -148,6 +148,12 @@ func Run(completeOptions completedServerRunOptions, stopCh <-chan struct{}) erro
 	// To help debugging, immediately log version
 	klog.Infof("Version: %+v", version.Get())
 
+	/**
+	***********************
+	创建处理链
+
+	***********************
+	*/
 	server, err := CreateServerChain(completeOptions, stopCh)
 	if err != nil {
 		return err
@@ -158,6 +164,11 @@ func Run(completeOptions completedServerRunOptions, stopCh <-chan struct{}) erro
 		return err
 	}
 
+	/**
+	***********************
+	开始执行, 真正调用：staging/src/k8s.io/apiserver/pkg/server/genericapiserver.go
+	***********************
+	 */
 	return prepared.Run(stopCh)
 }
 
@@ -168,6 +179,11 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 		return nil, err
 	}
 
+	/**
+	***********************
+
+	***********************
+	 */
 	kubeAPIServerConfig, insecureServingInfo, serviceResolver, pluginInitializer, admissionPostStartHook, err := CreateKubeAPIServerConfig(completedOptions, nodeTunneler, proxyTransport)
 	if err != nil {
 		return nil, err
@@ -184,6 +200,11 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 		return nil, err
 	}
 
+	/**
+	***********************
+
+	***********************
+	 */
 	kubeAPIServer, err := CreateKubeAPIServer(kubeAPIServerConfig, apiExtensionsServer.GenericAPIServer, admissionPostStartHook)
 	if err != nil {
 		return nil, err
